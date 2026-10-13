@@ -84,12 +84,12 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
 <p class="lead">CrestLine cuts three-hour forecast error at Greens Bayou by 46.9% against the standard baseline, and by 54.5% when the water is high. This page shows how that was measured, where the skill comes from, and where it runs out.</p>
 
 <h2>Why not “98% accuracy”</h2>
-<p>Bayou stage is massively autocorrelated. The level three hours from now is usually almost exactly the level right now, so a model that predicts <em>no change at all</em> scores a Nash–Sutcliffe efficiency near 0.9 and an RMSE under 0.25 ft — while containing no information whatsoever.</p>
-<p>Any flood model advertising a flat accuracy percentage is either misunderstanding this or hiding it. The honest benchmark is <strong>persistence</strong>: assume the level in three hours equals the level now. It is the standard baseline in operational hydrology, and on a river that sits still most days it is genuinely hard to beat.</p>
+<p>Bayou stage is massively autocorrelated. The level three hours from now is usually almost exactly the level right now, so a model that predicts <em>no change at all</em> scores a Nash–Sutcliffe efficiency near 0.9 and an RMSE under 0.25 ft, while containing no information.</p>
+<p>Any flood model advertising a flat accuracy percentage is either misunderstanding this or hiding it. The honest benchmark is <strong>persistence</strong>: assume the level in three hours equals the level now. It is the standard baseline in operational hydrology, and on a river that sits still most days it is hard to beat.</p>
 <p>Every number on this site is reported against it.</p>
 
 <h2>What was measured</h2>
-<p>A chronological split: trained on 2018–2024, tested on <strong>60,556 forecasts from 21 September 2024 to 11 October 2026</strong> — two years the model never saw. No shuffling, which on a time series would let the model interpolate between adjacent 15-minute readings and produce spectacular, meaningless scores.</p>
+<p>A chronological split: trained on 2018–2024, tested on <strong>60,556 forecasts from 21 September 2024 to 11 October 2026</strong>. Those are two years the model never saw. No shuffling, which on a time series would let the model interpolate between adjacent 15-minute readings and produce scores that look spectacular and mean nothing.</p>
 
 <table>
   <tr><th>Condition</th><th>Persistence</th><th>CrestLine</th><th>Error cut</th></tr>
@@ -97,10 +97,10 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
   <tr class="hi"><td>Highest 5% of water</td><td class="n">2.33 ft</td><td class="n">1.06 ft</td><td class="n">54.5%</td></tr>
 </table>
 
-<p>The second row matters more than the first. Flood models usually look good in aggregate because most days are dry, then fall apart when water rises. Here the gap <em>widens</em> — the model gains most exactly where the baseline fails.</p>
+<p>The second row matters more than the first. Flood models usually look good in aggregate because most days are dry, then fall apart when water rises. Here the gap <em>widens</em>. The model gains most where the baseline fails.</p>
 
 <h2>Where the skill comes from</h2>
-<p>Not from the model being clever. From the fact that water takes time to travel.</p>
+<p>The skill does not come from the model being clever. It comes from water taking time to travel.</p>
 <p>Cross-correlating each upstream gauge against Ley Road at increasing lags recovers a clear peak for each one:</p>
 
 <table>
@@ -111,7 +111,7 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
   <tr><td>Garners Bayou</td><td class="n">2.5 h</td><td class="n">0.893</td><td class="n">0.864</td></tr>
 </table>
 
-<p><strong>The lags order themselves by distance upstream</strong> — 5.0, 3.0, 2.5, 2.5 hours. Nothing in the analysis knows the geography; it recovered the river's travel time from the water alone.</p>
+<p><strong>The lags order themselves by distance upstream</strong>: 5.0, 3.0, 2.5, 2.5 hours. Nothing in the analysis knows the geography; it recovered the river's travel time from the water alone.</p>
 <p>The lead survives differencing, which rules out shared seasonal drift inflating the correlation: on hourly <em>changes</em> rather than levels, US-75 peaks at r = 0.296 at 4.5 h against r = 0.090 at zero lag. The correlation more than triples when shifted forward.</p>
 
 <h2>Where it stops working</h2>
@@ -146,17 +146,17 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
     <rect x="440" y="276" width="16" height="3" fill="#B8431A"/><text x="464" y="282" fill="#3D4C54">High water</text>
   </g>
 </svg>
-<p class="cap">Skill against persistence by forecast horizon. During high water it collapses from 54.5% at three hours to 7.3% at eighteen — past the time water needs to cross the watershed. This decay is why the product forecasts three hours and not more.</p>
+<p class="cap">Skill against persistence by forecast horizon. During high water it collapses from 54.5% at three hours to 7.3% at eighteen, past the time water needs to cross the watershed. This decay is why the product forecasts three hours and not more.</p>
 </div>
 
 <h2>The event that changed the design</h2>
-<p>An earlier version forecast six hours ahead and looked fine in aggregate — 38.5% high-water skill. Then we plotted the largest event in the test window, <strong>16 June 2026</strong>.</p>
+<p>An earlier version forecast six hours ahead and looked fine in aggregate: 38.5% high-water skill. Then we plotted the largest event in the test window, <strong>16 June 2026</strong>.</p>
 <p>Observed water climbed from 4 ft to 19 ft between 18:00 and midnight. The six-hour forecast sat flat at 2.5 ft through the entire rising limb, then jumped almost vertically to 26 ft — overshooting the actual 20.70 ft crest by <strong>5.3 ft</strong>. Six hours out, the model had no idea the surge was coming.</p>
 
-<div class="callout"><p>For a warning tool that is the failure that matters most. The entire value is warning <em>before</em> the water rises.</p></div>
+<div class="callout"><p>For a warning tool, that is the failure that matters most. The whole point is to warn people <em>before</em> the water rises.</p></div>
 
-<p>Diagnosis showed the crest errors were bimodal rather than biased. Of the six largest events, three were near-perfect (+0.24, +0.33, +0.60 ft) and three were wild over-predictions (+5.33, +4.53, +3.81 ft). Every bad one also peaked <em>early</em> — the model was extrapolating a steep upstream rise straight through instead of damping it.</p>
-<p>Adding gridded rainfall cured the overshoot: the same event now crests at 19.8 ft against 20.70 observed, slightly under rather than five feet over. It did <strong>not</strong> cure the blind spot, and the reason is structural — the model is fed <em>observed</em> rainfall up to issue time, but the storm driving that crest largely fell during the forecast window. No feature engineering recovers information that does not exist yet.</p>
+<p>Diagnosis showed the crest errors were bimodal rather than biased. Of the six largest events, three were near-perfect (+0.24, +0.33, +0.60 ft) and three were wild over-predictions (+5.33, +4.53, +3.81 ft). Every bad one also peaked <em>early</em>. The model was extrapolating a steep upstream rise straight through instead of damping it.</p>
+<p>Adding gridded rainfall cured the overshoot: the same event now crests at 19.8 ft against 20.70 observed, slightly under rather than five feet over. It did <strong>not</strong> cure the blind spot, and the reason is structural. The model is fed <em>observed</em> rainfall up to issue time, but the storm driving that crest largely fell during the forecast window. No feature engineering recovers information that does not exist yet.</p>
 <p>So the headline horizon moved from six hours to three, where skill peaks and the forecast sits inside the travel-time window. Closing the gap properly needs NWS quantitative precipitation forecasts as an input.</p>
 
 <h2>Data</h2>
@@ -166,15 +166,15 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
   <tr><td>NCEP Stage IV (via IEM)</td><td>Gridded rainfall, 2 cells</td><td class="n">hourly, 70,136 h pulled</td></tr>
 </table>
 <p>Stage IV is radar-derived and bias-corrected against gauges. Gridded rainfall matters here: what drives a bayou is rain over the whole watershed, not rain at one point.</p>
-<p>The model is a gradient-boosted regressor (<code>HistGradientBoostingRegressor</code>) over <strong>63 features</strong> — upstream levels at seven lags, rates of change over 1/3/6 h, the target's own recent history, and rainfall accumulated over 1, 3, 6, 12, 24, 72 and 168 hours. The 72 h and 168 h windows stand in for soil saturation, since wet ground is what turns rain into flooding and there is no direct soil-moisture feed.</p>
+<p>The model is a gradient-boosted regressor (<code>HistGradientBoostingRegressor</code>) over <strong>63 features</strong>: upstream levels at seven lags, rates of change over 1/3/6 h, the target's own recent history, and rainfall accumulated over 1, 3, 6, 12, 24, 72 and 168 hours. The 72 h and 168 h windows stand in for soil saturation, since wet ground is what turns rain into flooding and there is no direct soil-moisture feed.</p>
 <p>Serving imports its feature builder directly from the training module, so inference cannot silently drift from training.</p>
 
 <h2>Limits</h2>
 <ol>
-  <li><strong>One gauge.</strong> Trained and validated only on Greens Bayou at Ley Road. The method should generalise to any gauge with upstream neighbours, but that is untested.</li>
+  <li><strong>One gauge.</strong> Trained and validated only on Greens Bayou at Ley Road. The method should generalize to any gauge with upstream neighbours, but that is untested.</li>
   <li><strong>No street-level inference.</strong> CrestLine predicts a gauge. Whether water reaches a given address depends on elevation, storm drains and local topography, none of which are in the model.</li>
   <li><strong>Three hours, not more.</strong> Skill is effectively gone by eighteen hours.</li>
-  <li><strong>No forecast precipitation.</strong> Observed rainfall only — the largest remaining gap.</li>
+  <li><strong>No forecast precipitation.</strong> Observed rainfall only. This is the largest remaining gap.</li>
   <li><strong>Untested at extreme scale.</strong> The largest crest in the test window was 20.70 ft; this gauge's record is 33.61 ft. We make no claim about Harvey-scale events.</li>
   <li><strong>“High water” is not an official flood stage.</strong> The 5.35 ft line is the 95th percentile of this gauge's own eight-year record, labelled as such throughout. Official NWS action/minor/moderate/major stages are not yet incorporated.</li>
 </ol>
