@@ -86,7 +86,7 @@ if __name__ == "__main__":
             pd.concat(series.values(), axis=1).to_csv(OUT)
             print(f"  done: {len(series[name]):,} hours -> checkpointed\n")
         else:
-            print("  NOTHING RETURNED -- stop and tell Claude\n")
+            print("  NOTHING RETURNED\n")
 
     rain = pd.concat(series.values(), axis=1)
     rain.to_csv(OUT)
