@@ -1,11 +1,11 @@
 {
-  "issued_utc": "2026-10-13T18:30:00+00:00",
-  "valid_utc": "2026-10-13T21:30:00+00:00",
+  "issued_utc": "2026-10-13T19:15:00+00:00",
+  "valid_utc": "2026-10-13T22:15:00+00:00",
   "horizon_hours": 3,
-  "current_stage_ft": 1.65,
-  "forecast_stage_ft": 1.36,
-  "change_ft": -0.29,
-  "roc_ft_per_h": -0.22,
+  "current_stage_ft": 1.44,
+  "forecast_stage_ft": 1.33,
+  "change_ft": -0.11,
+  "roc_ft_per_h": -0.21,
   "state": "normal",
   "state_label": "Normal",
   "context": "A normal day \u2014 the bayou sits below 5.35 ft about 95% of the time.",
@@ -13,22 +13,6 @@
   "record_ft": 33.61,
   "band_ft": 0.38,
   "recent_stage": [
-    {
-      "t": "2026-10-12T19:00:00+00:00",
-      "ft": 1.93
-    },
-    {
-      "t": "2026-10-12T19:15:00+00:00",
-      "ft": 1.98
-    },
-    {
-      "t": "2026-10-12T19:30:00+00:00",
-      "ft": 2.02
-    },
-    {
-      "t": "2026-10-12T19:45:00+00:00",
-      "ft": 1.98
-    },
     {
       "t": "2026-10-12T20:00:00+00:00",
       "ft": 1.87
@@ -396,6 +380,22 @@
     {
       "t": "2026-10-13T18:45:00+00:00",
       "ft": 1.65
+    },
+    {
+      "t": "2026-10-13T19:00:00+00:00",
+      "ft": 1.58
+    },
+    {
+      "t": "2026-10-13T19:15:00+00:00",
+      "ft": 1.57
+    },
+    {
+      "t": "2026-10-13T19:30:00+00:00",
+      "ft": 1.51
+    },
+    {
+      "t": "2026-10-13T19:45:00+00:00",
+      "ft": 1.44
     }
   ],
   "recent_rain": [
@@ -501,16 +501,16 @@
     {
       "id": "08075900",
       "name": "Greens Bayou @ US-75",
-      "level_ft": 65.67,
-      "roc_ft_per_h": -0.03,
+      "level_ft": 65.7,
+      "roc_ft_per_h": 0.03,
       "lead_hours": 5.0,
       "r": 0.79
     },
     {
       "id": "08076000",
       "name": "Greens Bayou nr Houston",
-      "level_ft": 39.02,
-      "roc_ft_per_h": 0.0,
+      "level_ft": 39.01,
+      "roc_ft_per_h": -0.01,
       "lead_hours": 3.0,
       "r": 0.87
     },

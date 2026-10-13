@@ -59,11 +59,31 @@ def get_forecast():
     with LOCK:
         if CACHE["data"] is None:
             return {"status": "warming_up", "error": CACHE["error"]}
-        age = ((dt.datetime.now(dt.UTC) - CACHE["updated"]).total_seconds() / 60
-               if CACHE["updated"] else None)
-        return {"status": "ok", "stale": bool(age and age > 45),
-                "age_minutes": round(age, 1) if age else None,
-                "last_error": CACHE["error"], **CACHE["data"]}
+        now = dt.datetime.now(dt.UTC)
+        data = CACHE["data"]
+
+        # Two different clocks, two different failures.
+        # fetch_age: minutes since the scheduler last succeeded. Catches a dead
+        # refresh loop -- the server is up but no longer talking to USGS/IEM.
+        fetch_age = ((now - CACHE["updated"]).total_seconds() / 60
+                     if CACHE["updated"] else None)
+
+        # age: minutes since the forecast was ISSUED. Stage IV rainfall publishes
+        # hourly and lags, so the newest row with complete features sits behind
+        # the wall clock -- a forecast can be an hour old the moment it is made.
+        # This is the number that decides whether it is still worth reading.
+        issued = data.get("issued_utc")
+        valid = data.get("valid_utc")
+        age = ((now - dt.datetime.fromisoformat(issued)).total_seconds() / 60
+               if issued else None)
+        expired = bool(valid and now > dt.datetime.fromisoformat(valid))
+
+        return {"status": "ok",
+                "stale": bool(expired or (fetch_age is not None and fetch_age > 45)),
+                "expired": expired,
+                "age_minutes": round(age, 1) if age is not None else None,
+                "fetch_age_minutes": round(fetch_age, 1) if fetch_age is not None else None,
+                "last_error": CACHE["error"], **data}
 
 
 @app.get("/api/metrics")
