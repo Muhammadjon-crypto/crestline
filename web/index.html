@@ -138,6 +138,23 @@ body.replay #scrub{display:block}
   .navrow{height:auto;padding:12px 0}
   .keys{display:none}
 }
+
+
+
+/* ---------- phone fixes ---------- */
+@media (max-width:540px){
+  .navrow{align-items:flex-start}
+  .navright{flex-wrap:wrap;gap:10px;width:100%}
+  .gauge{font-size:13px;padding:8px 12px}
+  .modes button{font-size:12.5px;padding:8px 11px;white-space:nowrap}
+  .live{width:100%}
+  .barrow{flex-direction:column;align-items:stretch;gap:9px}
+  .barrow>*{min-width:0}
+  .pct{width:auto;text-align:left}
+  .xaxis{padding-right:0}
+  .scrubrow input[type=range]{flex:1 1 100%;min-width:0}
+}
+  .bar span{white-space:nowrap}
 </style>
 </head>
 
@@ -441,14 +458,14 @@ function render(d){
       <div class="lbl" style="margin-top:10px">Leads by ${u.lead_hours} h · r ${u.r}</div>
     </div>`).join('');
 
-  const m = d.metrics, SCALE = 600 / m.persistence_rmse_high_ft;
+  const m = d.metrics, SCALE = 68 / m.persistence_rmse_high_ft;
   $('mTest').textContent =
     `Both bars are root-mean-square error across ${m.n_test.toLocaleString()} forecasts from ` +
     `${m.test_start} to ${m.test_end} — two years the model never saw in training.`;
-  $('b1p').style.width = (m.persistence_rmse_ft * SCALE) + 'px';
-  $('b1c').style.width = (m.rmse_ft * SCALE) + 'px';
-  $('b2p').style.width = (m.persistence_rmse_high_ft * SCALE) + 'px';
-  $('b2c').style.width = (m.rmse_high_ft * SCALE) + 'px';
+  $('b1p').style.width = (m.persistence_rmse_ft * SCALE) + '%';
+  $('b1c').style.width = (m.rmse_ft * SCALE) + '%';
+  $('b2p').style.width = (m.persistence_rmse_high_ft * SCALE) + '%';
+  $('b2c').style.width = (m.rmse_high_ft * SCALE) + '%';
   $('b1pv').textContent = m.persistence_rmse_ft + '  persistence';
   $('b1cv').textContent = m.rmse_ft + '  CrestLine';
   $('b2pv').textContent = m.persistence_rmse_high_ft + '  persistence';
