@@ -11,13 +11,19 @@ UPSTREAM = {"08075900": "greens_us75", "08076000": "greens_hou",
 HORIZON_H = 3
 TEST_FRACTION = 0.25
 
-stage = pd.read_csv("data/greens_chain_15min.csv", index_col=0, parse_dates=True)
-stage.index = pd.to_datetime(stage.index, utc=True)
-stage.columns = [str(c) for c in stage.columns]
+def load_training_frames():
+    """Read the 8-year record. Only retraining needs this -- importing
+    build_features must NOT touch the filesystem, or the deployed server
+    (which ships no CSVs) dies on import."""
+    stage = pd.read_csv("data/greens_chain_15min.csv", index_col=0, parse_dates=True)
+    stage.index = pd.to_datetime(stage.index, utc=True)
+    stage.columns = [str(c) for c in stage.columns]
 
-rain = pd.read_csv("data/rain_stage4.csv", index_col=0, parse_dates=True)
-rain.index = pd.to_datetime(rain.index, utc=True)
-rain = rain.loc[:, ~rain.T.duplicated()].sort_index()
+    rain = pd.read_csv("data/rain_stage4.csv", index_col=0, parse_dates=True)
+    rain.index = pd.to_datetime(rain.index, utc=True)
+    rain = rain.loc[:, ~rain.T.duplicated()].sort_index()
+    return stage, rain
+
 
 def rain_features(rain_df, target_index):
     f = pd.DataFrame(index=rain_df.index)
@@ -46,6 +52,7 @@ def build_features(stage_df, rain_df):
     return X.join(rain_features(rain_df, stage_df.index))
 
 if __name__ == "__main__":
+    stage, rain = load_training_frames()
     t = stage[TARGET]
     X = build_features(stage, rain)
     y = t.shift(-HORIZON_H * 4)

@@ -1,10 +1,10 @@
 {
-  "issued_utc": "2026-10-13T18:15:00+00:00",
-  "valid_utc": "2026-10-13T21:15:00+00:00",
+  "issued_utc": "2026-10-13T18:30:00+00:00",
+  "valid_utc": "2026-10-13T21:30:00+00:00",
   "horizon_hours": 3,
   "current_stage_ft": 1.65,
-  "forecast_stage_ft": 1.42,
-  "change_ft": -0.23,
+  "forecast_stage_ft": 1.36,
+  "change_ft": -0.29,
   "roc_ft_per_h": -0.22,
   "state": "normal",
   "state_label": "Normal",
@@ -518,15 +518,15 @@
       "id": "08076500",
       "name": "Halls Bayou",
       "level_ft": 39.44,
-      "roc_ft_per_h": 0.01,
+      "roc_ft_per_h": 0.0,
       "lead_hours": 2.5,
       "r": 0.88
     },
     {
       "id": "08076180",
       "name": "Garners Bayou",
-      "level_ft": 33.6,
-      "roc_ft_per_h": 0.0,
+      "level_ft": 33.61,
+      "roc_ft_per_h": 0.01,
       "lead_hours": 2.5,
       "r": 0.89
     }
