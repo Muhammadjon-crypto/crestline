@@ -8,6 +8,7 @@ call, and the model's performance.
 Imports build_features from step9 so serving and training cannot drift.
 """
 import sys, json, datetime as dt
+from pathlib import Path
 import numpy as np, pandas as pd, requests, joblib
 
 sys.path.insert(0, "src")
@@ -80,6 +81,11 @@ def history():
     """Percentiles and past crests from the 8-year record, computed once."""
     global _HIST
     if _HIST is not None:
+        return _HIST
+    # shipped with the deploy; the CSV is only needed to regenerate it
+    cached = Path("data/history.json")
+    if cached.exists():
+        _HIST = json.load(open(cached))
         return _HIST
     df = pd.read_csv("data/greens_chain_15min.csv", index_col=0, parse_dates=True)
     df.columns = [str(c) for c in df.columns]
