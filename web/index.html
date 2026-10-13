@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrestLine — Greens Bayou forecast</title>
+<meta name="description" content="A three-hour flood forecast for Greens Bayou at Ley Road, east Houston.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M6 52 C20 52 22 14 32 14 C42 14 44 52 58 52' fill='none' stroke='%230C1D26' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+
+<style>
+:root{
+  --deepwater:#0C1D26; --bone:#F2EFE9; --signal:#0A6B75;
+  --crest:#B8431A; --crest-dark:#8A3312; --silt:#5E6E76;
+  --rule:#DCD7CD; --tint:#EAE5DC; --panel:#F7F5F1;
+  --accent:var(--signal);          /* flips to crest when water rises */
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bone); color:var(--deepwater);
+  font-family:Archivo,system-ui,sans-serif; font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.lbl{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;
+     letter-spacing:.17em;text-transform:uppercase;color:var(--silt)}
+.wrap{max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,44px)}
+a{color:var(--signal)} a:hover{color:#084F57}
+
+/* ---------- nav ---------- */
+nav{border-bottom:1px solid var(--rule)}
+.navrow{display:flex;align-items:center;justify-content:space-between;
+        gap:16px;height:66px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:13px}
+.brand svg{width:31px;height:31px;flex-shrink:0}
+.brand b{font-size:21px;font-weight:600;letter-spacing:-.035em}
+.navright{display:flex;align-items:center;gap:clamp(12px,2vw,28px)}
+.gauge{font:500 14px Archivo,sans-serif;color:var(--deepwater);background:#fff;
+       border:1px solid #C9D1D4;border-radius:4px;padding:9px 15px}
+.live{display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+/* ---------- alert ---------- */
+#alert{display:none;background:var(--crest);color:#fff}
+#alert.on{display:block}
+.alertrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:13px 0}
+.alertrow strong{font-size:15px;font-weight:600}
+.alertrow span{font-size:14px;color:#F7D9CC}
+
+/* ---------- hero ---------- */
+.hero{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(18px,2.4vw,32px);
+      padding:clamp(24px,3vw,36px) 0 clamp(22px,2.6vw,30px);
+      border-bottom:1px solid var(--rule);align-items:start}
+.cell + .cell{border-left:1px solid var(--rule);padding-left:clamp(18px,2.4vw,32px)}
+.big{font-size:clamp(42px,5.4vw,76px);font-weight:500;line-height:.88;letter-spacing:-.03em}
+.unit{font-size:clamp(15px,1.6vw,23px);color:var(--silt)}
+.sub{margin-top:11px;font-size:13px;color:#3D4C54}
+.note{margin-top:8px;font-size:13px;line-height:1.45;color:#3D4C54}
+.pill{display:inline-flex;align-items:center;gap:11px;background:#E4EEEE;
+      padding:9px 16px;border-radius:4px}
+.pill b{font-size:clamp(16px,1.9vw,19px);font-weight:600;letter-spacing:-.01em}
+
+/* ---------- chart ---------- */
+.chartsec{padding:clamp(20px,2.4vw,28px) 0 16px}
+.chead{display:flex;justify-content:space-between;align-items:baseline;
+       gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.ctitle{font-size:17px;font-weight:600}
+.keys{display:flex;align-items:center;gap:clamp(10px,1.6vw,20px);flex-wrap:wrap}
+.key{display:flex;align-items:center;gap:7px}
+.swatch{width:18px;height:3px;border-radius:2px}
+#chart{width:100%;height:auto;display:block}
+.xaxis{display:flex;justify-content:space-between;margin-top:8px;
+       padding-right:56px;gap:4px}
+
+/* ---------- upstream ---------- */
+.upsec{padding-bottom:26px}
+.uphead{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;margin-bottom:14px}
+.uphead h2{font-size:15px;font-weight:600;margin:0}
+.upgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+        background:var(--rule);border:1px solid var(--rule)}
+.upcard{background:var(--panel);padding:15px 18px}
+.upname{font-size:13.5px;font-weight:600;margin-bottom:9px}
+.uprow{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.uplevel{font-size:20px;font-weight:500}
+
+/* ---------- methods ---------- */
+.methods{background:var(--tint);border-top:1px solid var(--rule);
+         padding:26px 0 34px;margin-top:8px}
+.mgrid{display:grid;grid-template-columns:1fr 2fr;gap:clamp(20px,3vw,36px)}
+.mgrid h2{font-size:15px;font-weight:600;margin:0 0 10px}
+.mgrid p{margin:0 0 12px;font-size:13.5px;line-height:1.62;color:#3D4C54}
+.barblock{margin-bottom:22px}
+.barhead{display:flex;align-items:baseline;gap:10px;margin-bottom:9px;flex-wrap:wrap}
+.barhead b{font-size:14px;font-weight:600}
+.barrow{display:flex;align-items:center;gap:18px}
+.bars{flex-grow:1;min-width:0}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.bar i{height:13px;border-radius:1px;display:block}
+.pct{font-size:clamp(20px,2.4vw,26px);font-weight:600;width:86px;text-align:right;flex-shrink:0}
+.mfoot{margin-top:20px;padding-top:13px;border-top:1px solid var(--rule);
+       font-size:12.5px;color:#3D4C54}
+
+/* ---------- replay ---------- */
+.modes{display:flex;border:1px solid #C9D1D4;border-radius:4px;overflow:hidden}
+.modes button{font:500 13px Archivo,sans-serif;background:#fff;color:var(--silt);
+  border:0;padding:8px 13px;cursor:pointer}
+.modes button+button{border-left:1px solid #C9D1D4}
+.modes button.sel{background:var(--deepwater);color:#fff}
+#scrub{position:sticky;bottom:0;display:none;background:var(--bone);
+  border-top:1px solid var(--rule);padding:14px 0 16px;z-index:5}
+body.replay #scrub{display:block}
+.scrubrow{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.scrubrow input[type=range]{flex:1 1 320px;min-width:200px;accent-color:var(--crest)}
+.play{font:500 13px Archivo,sans-serif;background:var(--deepwater);color:#fff;
+  border:0;border-radius:4px;padding:9px 16px;cursor:pointer;flex-shrink:0}
+
+/* ---------- states ---------- */
+#status{padding:60px 0;text-align:center;color:var(--silt);font-size:14px}
+.hidden{display:none}
+
+/* ---------- phone ---------- */
+@media (max-width:860px){
+  .hero{grid-template-columns:repeat(2,1fr);gap:20px}
+  .cell+.cell{border-left:none;padding-left:0}
+  .cell:nth-child(3),.cell:nth-child(4){padding-top:18px;border-top:1px solid var(--rule)}
+  .upgrid{grid-template-columns:repeat(2,1fr)}
+  .mgrid{grid-template-columns:1fr}
+  .xaxis{padding-right:40px}
+  .xaxis .lbl:nth-child(2),.xaxis .lbl:nth-child(4){display:none}
+}
+@media (max-width:540px){
+  .hero{grid-template-columns:1fr}
+  .cell+.cell{padding-top:16px;border-top:1px solid var(--rule)}
+  .upgrid{grid-template-columns:1fr}
+  .navrow{height:auto;padding:12px 0}
+  .keys{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<nav><div class="wrap navrow">
+  <div class="brand">
+    <svg viewBox="0 0 64 64" role="img" aria-label="CrestLine">
+      <clipPath id="above"><rect x="0" y="0" width="64" height="34"/></clipPath>
+      <line x1="2" y1="34" x2="62" y2="34" stroke="#AAB5BA" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none"
+            stroke="#0C1D26" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none"
+            stroke="#B8431A" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"
+            clip-path="url(#above)"/>
+    </svg>
+    <b>CrestLine</b>
+  </div>
+  <div class="navright">
+    <span class="gauge">Greens Bayou at Ley Rd</span>
+    <span class="modes">
+      <button type="button" id="mLive" class="sel">Live</button>
+      <button type="button" id="mReplay">15 Jun 2026 event</button>
+    </span>
+    <span class="live"><span class="dot"></span><span class="lbl" id="updated">Connecting…</span></span>
+  </div>
+</div></nav>
+
+<div id="alert"><div class="wrap alertrow">
+  <svg width="17" height="17" viewBox="0 0 20 20" aria-hidden="true">
+    <path d="M10 2.5 L18.5 17.5 L1.5 17.5 Z" fill="none" stroke="#fff" stroke-width="1.9" stroke-linejoin="round"/>
+    <line x1="10" y1="8" x2="10" y2="12.3" stroke="#fff" stroke-width="1.9" stroke-linecap="round"/>
+    <circle cx="10" cy="14.9" r="1.05" fill="#fff"/>
+  </svg>
+  <strong id="alertTitle"></strong>
+  <span id="alertBody"></span>
+</div></div>
+
+<div id="status">Loading forecast…</div>
+
+<main id="app" class="hidden">
+
+  <div class="wrap hero">
+    <div class="cell">
+      <div class="lbl">Stage now</div>
+      <div style="display:flex;align-items:baseline;gap:7px;margin-top:12px">
+        <span class="mono big" id="nowFt">—</span><span class="mono unit">ft</span>
+      </div>
+      <div class="sub">USGS 08076700 · 15-min telemetry</div>
+    </div>
+
+    <div class="cell">
+      <div class="lbl">Forecast — 3 hours</div>
+      <div style="display:flex;align-items:baseline;gap:7px;margin-top:12px">
+        <span class="mono big" id="fcstFt">—</span><span class="mono unit">ft</span>
+      </div>
+      <div class="sub" id="fcstSub"></div>
+      <div class="note" id="context"></div>
+    </div>
+
+    <div class="cell">
+      <div class="lbl">Condition</div>
+      <div style="margin-top:12px"><span class="pill" id="pill">
+        <span class="dot"></span><b id="stateLabel">—</b>
+      </span></div>
+      <div class="note" id="stateNote"></div>
+    </div>
+
+    <div class="cell">
+      <div class="lbl" id="fourthLbl">Forecast confidence</div>
+      <div style="display:flex;align-items:baseline;gap:7px;margin-top:12px">
+        <span class="mono" id="fourthVal" style="font-size:clamp(28px,3.2vw,44px);font-weight:500;line-height:1;letter-spacing:-.02em">—</span>
+        <span class="mono" id="fourthUnit" style="font-size:16px;color:var(--silt)">ft</span>
+      </div>
+      <div class="note" id="fourthNote"></div>
+    </div>
+  </div>
+
+  <section class="wrap chartsec">
+    <div class="chead">
+      <div style="display:flex;align-items:baseline;gap:22px;flex-wrap:wrap">
+        <span class="ctitle">Rainfall and stage — past 24 hours</span>
+        <span class="lbl">Greens Bayou watershed</span>
+      </div>
+      <div class="keys">
+        <span class="key"><span class="swatch" style="height:11px;width:11px;background:#8FB8BD"></span><span class="lbl">Rain</span></span>
+        <span class="key"><span class="swatch" style="background:var(--deepwater)"></span><span class="lbl">Observed</span></span>
+        <span class="key"><span class="swatch" style="background:var(--accent)" id="keyFcst"></span><span class="lbl">Forecast</span></span>
+        <span class="key"><span class="swatch" style="height:9px;background:rgba(10,107,117,.18)" id="keyBand"></span><span class="lbl">±1 RMSE</span></span>
+      </div>
+    </div>
+    <svg id="chart" viewBox="0 0 1352 336" role="img" aria-label="Rainfall and water level over the past 24 hours with a three-hour forecast"></svg>
+    <div class="xaxis" id="xaxis"></div>
+  </section>
+
+  <section class="wrap upsec">
+    <div class="uphead">
+      <h2>Upstream inputs</h2>
+      <span class="lbl">Lead time measured from 8 years of paired records · each gauge on its own datum</span>
+    </div>
+    <div class="upgrid" id="upstream"></div>
+  </section>
+
+  <section class="methods"><div class="wrap mgrid">
+    <div>
+      <h2>How we know it works</h2>
+      <p>The baseline in river forecasting is <em>persistence</em> — assume the level three hours from now equals the level right now. On a bayou that sits still most of the time, that is already hard to beat.</p>
+      <p id="mTest"></p>
+    </div>
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;gap:12px">
+        <span class="lbl">Root-mean-square error at +3 h (ft) — lower is better</span>
+        <span class="lbl">Error cut</span>
+      </div>
+      <div class="barblock">
+        <div class="barhead"><b>All conditions</b></div>
+        <div class="barrow">
+          <div class="bars">
+            <div class="bar"><i id="b1p" style="background:#B9B2A5"></i><span class="mono" style="font-size:12px;color:var(--silt)" id="b1pv"></span></div>
+            <div class="bar"><i id="b1c" style="background:var(--deepwater)"></i><span class="mono" style="font-size:12px;font-weight:500" id="b1cv"></span></div>
+          </div>
+          <span class="mono pct" id="b1pct"></span>
+        </div>
+      </div>
+      <div class="barblock" style="padding-top:20px;border-top:1px solid var(--rule)">
+        <div class="barhead"><b>Highest 5% of water</b><span style="font-size:12.5px;color:#3D4C54">— when a forecast actually matters</span></div>
+        <div class="barrow">
+          <div class="bars">
+            <div class="bar"><i id="b2p" style="background:#B9B2A5"></i><span class="mono" style="font-size:12px;color:var(--silt)" id="b2pv"></span></div>
+            <div class="bar"><i id="b2c" style="background:var(--crest)"></i><span class="mono" style="font-size:12px;font-weight:500;color:var(--crest)" id="b2cv"></span></div>
+          </div>
+          <span class="mono pct" style="color:var(--crest)" id="b2pct"></span>
+        </div>
+      </div>
+      <div class="mfoot">The model gains most exactly where persistence fails — on rising water. <a href="methods.html">Full validation, lead times and limits →</a></div>
+    </div>
+  </div></section>
+
+</main>
+
+<div id="scrub"><div class="wrap scrubrow">
+  <button type="button" class="play" id="play">▶ Play</button>
+  <input type="range" id="slider" min="0" max="0" value="0" aria-label="Scrub through the June 2026 flood">
+  <span class="mono" id="stamp" style="font-size:13px;min-width:170px"></span>
+  <span class="lbl" id="scrubnote"></span>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const ft = n => n.toFixed(2);
+const clock = iso => new Date(iso).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+/* ---------- chart geometry ---------- */
+const W = 1280, RAIN_H = 64, TOP = 90, BOT = 310;
+
+function buildChart(d){
+  const obs = d.recent_stage.map(p => ({t:new Date(p.t).getTime(), v:p.ft}));
+  if (!obs.length) return '';
+  const rain = d.recent_rain.map(p => ({t:new Date(p.t).getTime(), v:p.in}));
+
+  const t0 = obs[0].t, tNow = obs[obs.length-1].t;
+  const tEnd = new Date(d.valid_utc).getTime();
+  const x = t => (t - t0) / (tEnd - t0) * W;
+
+  // stage scale: always show the high-water line, always leave headroom
+  const peak = Math.max(d.high_water_ft, d.forecast_stage_ft + d.band_ft,
+                        ...obs.map(o => o.v));
+  const vMax = Math.max(6, peak * 1.18);
+  const y = v => BOT - (v / vMax) * (BOT - TOP);
+
+  const rMax = Math.max(0.12, ...rain.map(r => r.v)) * 1.2;
+  const barW = rain.length > 1 ? (x(rain[1].t) - x(rain[0].t)) * 0.68 : 20;
+
+  let s = '';
+
+  // rainfall, hanging from the top
+  s += rain.filter(r => r.v > 0).map(r =>
+    `<rect x="${(x(r.t)-barW/2).toFixed(1)}" y="0" width="${barW.toFixed(1)}"
+           height="${Math.max(2,(r.v/rMax)*RAIN_H).toFixed(1)}" fill="#8FB8BD"/>`).join('');
+  s += `<line x1="0" y1="${RAIN_H}" x2="${W}" y2="${RAIN_H}" stroke="#DCD7CD"/>`;
+  s += `<text x="1292" y="10" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#5E6E76">${rMax.toFixed(2)}</text>`;
+  s += `<text x="1292" y="60" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#5E6E76">in/h</text>`;
+  if (d.rain_24h_total > 0)
+    s += `<text x="4" y="78" font-family="'IBM Plex Mono',monospace" font-size="10.5"
+            letter-spacing="1.4" fill="#5E6E76">${d.rain_24h_total} IN OVER 24H — NCEP STAGE IV</text>`;
+
+  // gridlines + y labels
+  const step = vMax > 20 ? 8 : vMax > 10 ? 4 : 2;
+  for (let v = 0; v <= vMax; v += step){
+    s += `<line x1="0" y1="${y(v).toFixed(1)}" x2="${W}" y2="${y(v).toFixed(1)}"
+            stroke="${v === 0 ? '#DCD7CD' : '#E4DFD6'}"/>`;
+    s += `<text x="1292" y="${(y(v)+4).toFixed(1)}" font-family="'IBM Plex Mono',monospace"
+            font-size="11" fill="#5E6E76">${v}${v + step > vMax ? ' ft' : ''}</text>`;
+  }
+
+  // high-water reference
+  const hwY = y(d.high_water_ft);
+  s += `<line x1="0" y1="${hwY.toFixed(1)}" x2="${W}" y2="${hwY.toFixed(1)}"
+          stroke="#B8431A" stroke-width="1.5" stroke-dasharray="5 5" opacity=".6"/>`;
+  s += `<text x="4" y="${(hwY-7).toFixed(1)}" font-family="'IBM Plex Mono',monospace"
+          font-size="10.5" letter-spacing="1.6" fill="#B8431A">HIGH WATER — ${d.high_water_ft} FT (95TH PCT)</text>`;
+
+  // observed: area then line
+  const pts = obs.map(o => `${x(o.t).toFixed(1)} ${y(o.v).toFixed(1)}`);
+  s += `<path d="M${pts.join(' L')} L${x(tNow).toFixed(1)} ${BOT} L0 ${BOT} Z"
+          fill="#0C1D26" opacity=".055"/>`;
+
+  // forecast cone — band grows linearly to the measured RMSE
+  const xN = x(tNow), yN = y(obs[obs.length-1].v);
+  const xF = x(tEnd),  yF = y(d.forecast_stage_ft);
+  const hi = y(d.forecast_stage_ft + d.band_ft), lo = y(d.forecast_stage_ft - d.band_ft);
+  const col = d.state === 'normal' ? '#0A6B75' : '#B8431A';
+  s += `<path d="M${xN} ${yN} L${xF} ${hi.toFixed(1)} L${xF} ${lo.toFixed(1)} Z"
+          fill="${col}" opacity=".18"/>`;
+
+  s += `<path d="M${pts.join(' L')}" fill="none" stroke="#0C1D26"
+          stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+  s += `<path d="M${xN} ${yN} L${xF} ${yF.toFixed(1)}" fill="none" stroke="${col}"
+          stroke-width="2.8" stroke-linecap="round"/>`;
+
+  // now divider + endpoints
+  s += `<line x1="${xN}" y1="84" x2="${xN}" y2="318" stroke="#5E6E76" stroke-dasharray="3 4"/>`;
+  s += `<circle cx="${xN}" cy="${yN.toFixed(1)}" r="4.6" fill="#F2EFE9" stroke="#0C1D26" stroke-width="2.4"/>`;
+  s += `<circle cx="${xF}" cy="${yF.toFixed(1)}" r="4.2" fill="${col}"/>`;
+  return s;
+}
+
+function buildAxis(d){
+  const obs = d.recent_stage;
+  if (!obs.length) return;
+  const marks = [0, .25, .5, .75].map(f => obs[Math.floor(f*(obs.length-1))].t);
+  $('xaxis').innerHTML =
+    marks.map(t => `<span class="lbl">${clock(t)}</span>`).join('') +
+    `<span class="lbl" style="color:var(--deepwater)">Now ${clock(obs[obs.length-1].t)}</span>` +
+    `<span class="lbl">+${d.horizon_hours}h</span>`;
+}
+
+/* ---------- render ---------- */
+function render(d){
+  const rising = d.state !== 'normal';      // colour shifts
+  const high   = d.state === 'high';        // alarm bar
+  document.documentElement.style.setProperty('--accent', rising ? 'var(--crest)' : 'var(--signal)');
+
+  $('nowFt').textContent  = ft(d.current_stage_ft);
+  $('fcstFt').textContent = ft(d.forecast_stage_ft);
+  $('fcstFt').style.color = rising ? 'var(--crest)' : '';
+
+  const sign = d.change_ft >= 0 ? '+' : '';
+  $('fcstSub').innerHTML =
+    `<span class="mono" style="font-weight:600;color:${rising ? 'var(--crest)' : 'var(--signal)'}">${sign}${ft(d.change_ft)} ft</span>
+     &nbsp;±${d.band_ft} · valid ${clock(d.valid_utc)}`;
+  $('context').textContent = d.context;
+  $('context').style.display = (d.state === 'high') ? 'none' : '';
+
+  $('stateLabel').textContent = d.state_label;
+  $('pill').style.background  = rising ? '#F8E6DD' : '#E4EEEE';
+  $('stateLabel').style.color = rising ? 'var(--crest-dark)' : '';
+  const above = d.current_stage_ft - d.high_water_ft;
+  $('stateNote').textContent =
+      above >= 0 ? `${above.toFixed(1)} ft above high water. Record here is ${d.record_ft} ft.`
+    : high       ? `Forecast to pass high water within ${d.horizon_hours} h. Record here is ${d.record_ft} ft.`
+    : rising     ? `${(-above).toFixed(1)} ft below high water, and moving.`
+    :              `Well below high water. Record at this gauge is ${d.record_ft} ft.`;
+
+  // fourth cell: confidence when calm, rate of rise when not
+  if (high){
+    $('fourthLbl').textContent  = 'Rate of rise';
+    $('fourthVal').textContent  = (d.roc_ft_per_h >= 0 ? '+' : '') + d.roc_ft_per_h;
+    $('fourthVal').style.color  = 'var(--crest)';
+    $('fourthUnit').textContent = 'ft / h';
+    $('fourthNote').textContent = 'Measured over the last hour of telemetry.';
+  } else {
+    $('fourthLbl').textContent  = 'Forecast confidence';
+    $('fourthVal').textContent  = '±' + d.band_ft;
+    $('fourthVal').style.color  = '';
+    $('fourthUnit').textContent = 'ft';
+    $('fourthNote').textContent =
+      `Typical error at this lead time, measured on ${d.metrics.n_test.toLocaleString()} held-out forecasts.`;
+  }
+
+  $('alert').classList.toggle('on', high);
+  if (high){
+    $('alertTitle').textContent =
+      `${d.state_label} — forecast ${ft(d.forecast_stage_ft)} ft by ${clock(d.valid_utc)}`;
+    $('alertBody').textContent = d.context;
+  }
+
+  $('chart').innerHTML = buildChart(d);
+  buildAxis(d);
+  $('keyFcst').style.background = rising ? 'var(--crest)' : 'var(--signal)';
+  $('keyBand').style.background = rising ? 'rgba(184,67,26,.20)' : 'rgba(10,107,117,.18)';
+
+  $('upstream').innerHTML = d.upstream.map(u => `
+    <div class="upcard">
+      <div class="upname">${u.name}</div>
+      <div class="uprow">
+        <span class="mono uplevel">${u.level_ft} <span style="font-size:12px;color:var(--silt)">ft</span></span>
+        <span class="mono" style="font-size:12px;font-weight:500;color:${u.roc_ft_per_h > 0.1 ? 'var(--crest)' : 'var(--signal)'}">
+          ${u.roc_ft_per_h >= 0 ? '+' : ''}${u.roc_ft_per_h} /h</span>
+      </div>
+      <div class="lbl" style="margin-top:10px">Leads by ${u.lead_hours} h · r ${u.r}</div>
+    </div>`).join('');
+
+  const m = d.metrics, SCALE = 600 / m.persistence_rmse_high_ft;
+  $('mTest').textContent =
+    `Both bars are root-mean-square error across ${m.n_test.toLocaleString()} forecasts from ` +
+    `${m.test_start} to ${m.test_end} — two years the model never saw in training.`;
+  $('b1p').style.width = (m.persistence_rmse_ft * SCALE) + 'px';
+  $('b1c').style.width = (m.rmse_ft * SCALE) + 'px';
+  $('b2p').style.width = (m.persistence_rmse_high_ft * SCALE) + 'px';
+  $('b2c').style.width = (m.rmse_high_ft * SCALE) + 'px';
+  $('b1pv').textContent = m.persistence_rmse_ft + '  persistence';
+  $('b1cv').textContent = m.rmse_ft + '  CrestLine';
+  $('b2pv').textContent = m.persistence_rmse_high_ft + '  persistence';
+  $('b2cv').textContent = m.rmse_high_ft + '  CrestLine';
+  $('b1pct').textContent = (m.skill * 100).toFixed(1) + '%';
+  $('b2pct').textContent = (m.skill_high * 100).toFixed(1) + '%';
+
+  $('updated').textContent = d.replay
+    ? `Replay · ${new Date(d.issued_utc).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'})}`
+    : d.stale
+    ? `Last update ${Math.round(d.age_minutes)} min ago`
+    : `Live · updated ${clock(d.issued_utc)}`;
+
+  $('status').classList.add('hidden');
+  $('app').classList.remove('hidden');
+}
+
+async function load(){
+  try{
+    const r = await fetch('/api/forecast');
+    const d = await r.json();
+    if (d.status === 'warming_up'){ setTimeout(load, 2500); return; }
+    render(d);
+  }catch(e){
+    $('status').innerHTML =
+      'Could not reach the forecast service. <a href="#" onclick="location.reload();return false">Retry</a>';
+  }
+}
+/* ---------- replay: a backtest of the frozen model over a real flood ---- */
+let REPLAY = null, timer = null;
+const isReplay = () => document.body.classList.contains('replay');
+
+/* one frame -> the same payload shape render() already takes */
+function frameToPayload(i){
+  const R = REPLAY, f = R.frames[i];
+  const now = new Date(f.t).getTime(), from = now - 24*3600*1000;
+  const within = p => { const t = new Date(p.t).getTime(); return t >= from && t <= now; };
+  const rain = R.rain.filter(within);
+  return {
+    replay: true,
+    issued_utc: f.t,
+    valid_utc: new Date(now + R.horizon_hours*3600*1000).toISOString(),
+    horizon_hours: R.horizon_hours,
+    current_stage_ft: f.now_ft, forecast_stage_ft: f.fcst_ft,
+    change_ft: f.change_ft, roc_ft_per_h: f.roc_ft_per_h,
+    state: f.state, state_label: f.state_label, context: f.context,
+    high_water_ft: R.high_water_ft, record_ft: R.record_ft, band_ft: f.band_ft,
+    recent_stage: R.stage.filter(within), recent_rain: rain,
+    rain_24h_total: +rain.reduce((a,p) => a + p.in, 0).toFixed(2),
+    upstream: f.upstream || [], metrics: R.metrics,
+  };
+}
+
+function showFrame(i){
+  const f = REPLAY.frames[i];
+  render(frameToPayload(i));
+  $('stamp').textContent = new Date(f.t)
+    .toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+  $('slider').value = i;
+}
+
+function stop(){ if (timer){ clearInterval(timer); timer = null; $('play').textContent = '▶ Play'; } }
+
+async function enterReplay(){
+  if (!REPLAY){
+    $('status').textContent = 'Loading event…';
+    REPLAY = await (await fetch('/api/replay')).json();
+    if (REPLAY.status === 'unavailable'){
+      $('status').textContent = 'Replay data not built yet.'; return;
+    }
+  }
+  document.body.classList.add('replay');
+  $('mReplay').classList.add('sel'); $('mLive').classList.remove('sel');
+  $('slider').max = REPLAY.frames.length - 1;
+  $('scrubnote').textContent =
+    `Event: ${REPLAY.event.observed_crest_ft} ft crest · ${REPLAY.event.rain_total_in} in rain total · model RMSE 0.88 ft over ${REPLAY.frames.length} forecasts`;
+  showFrame(Math.round(REPLAY.frames.length * 0.30));   // just before the surge
+}
+
+function enterLive(){
+  stop();
+  document.body.classList.remove('replay');
+  $('mLive').classList.add('sel'); $('mReplay').classList.remove('sel');
+  load();
+}
+
+$('mReplay').onclick = enterReplay;
+$('mLive').onclick   = enterLive;
+$('slider').oninput  = e => { stop(); showFrame(+e.target.value); };
+$('play').onclick = () => {
+  if (timer) return stop();
+  $('play').textContent = '❚❚ Pause';
+  timer = setInterval(() => {
+    const i = +$('slider').value + 1;
+    if (i >= REPLAY.frames.length) return stop();
+    showFrame(i);
+  }, 220);
+};
+
+load();
+setInterval(() => { if (!isReplay()) load(); }, 5 * 60 * 1000);
+</script>
+</body>
+</html>

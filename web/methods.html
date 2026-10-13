@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrestLine — Methods and limits</title>
+<meta name="description" content="How CrestLine is validated, where its skill comes from, and where it stops working.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M6 52 C20 52 22 14 32 14 C42 14 44 52 58 52' fill='none' stroke='%230C1D26' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--deepwater:#0C1D26;--bone:#F2EFE9;--signal:#0A6B75;--crest:#B8431A;
+      --silt:#5E6E76;--rule:#DCD7CD;--tint:#EAE5DC;--panel:#F7F5F1}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bone);color:var(--deepwater);font-family:Archivo,system-ui,sans-serif;
+     font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.lbl{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;
+     letter-spacing:.17em;text-transform:uppercase;color:var(--silt)}
+.wrap{max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,44px)}
+.col{max-width:760px}
+a{color:var(--signal)}
+
+nav{border-bottom:1px solid var(--rule)}
+.navrow{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.brand{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit}
+.brand svg{width:31px;height:31px}
+.brand b{font-size:21px;font-weight:600;letter-spacing:-.035em}
+
+h1{font-size:clamp(28px,4vw,42px);font-weight:600;letter-spacing:-.03em;
+   line-height:1.1;margin:clamp(32px,5vw,56px) 0 14px}
+.lead{font-size:clamp(16px,1.9vw,19px);line-height:1.55;color:#3D4C54;margin:0 0 8px}
+h2{font-size:clamp(19px,2.3vw,23px);font-weight:600;letter-spacing:-.02em;
+   margin:clamp(34px,4.5vw,52px) 0 14px;padding-top:clamp(26px,3vw,34px);
+   border-top:1px solid var(--rule)}
+h3{font-size:16px;font-weight:600;margin:26px 0 8px}
+p{margin:0 0 15px;line-height:1.62;color:#3D4C54}
+p strong,li strong{color:var(--deepwater)}
+li{margin-bottom:8px;line-height:1.6;color:#3D4C54}
+em{color:var(--deepwater)}
+code{font-family:'IBM Plex Mono',monospace;font-size:.88em;background:var(--tint);
+     padding:1px 5px;border-radius:3px}
+
+table{border-collapse:collapse;width:100%;max-width:760px;margin:20px 0 24px;font-size:14.5px}
+th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+   letter-spacing:.14em;text-transform:uppercase;color:var(--silt);
+   font-weight:400;padding:0 14px 9px 0;border-bottom:1px solid var(--rule)}
+td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule)}
+td.n{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+tr.hi td{color:var(--crest);font-weight:500}
+
+.exhibit{background:var(--panel);border:1px solid var(--rule);padding:clamp(18px,3vw,28px);
+         margin:24px 0 28px;max-width:860px}
+.exhibit svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:#3D4C54;margin-top:14px;line-height:1.55}
+
+.callout{border-left:3px solid var(--crest);padding:4px 0 4px 18px;margin:22px 0}
+.callout p{margin:0;color:var(--deepwater)}
+
+footer{background:var(--tint);border-top:1px solid var(--rule);
+       margin-top:clamp(40px,6vw,72px);padding:30px 0 44px}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap navrow">
+  <a class="brand" href="index.html">
+    <svg viewBox="0 0 64 64" role="img" aria-label="CrestLine">
+      <clipPath id="a"><rect x="0" y="0" width="64" height="34"/></clipPath>
+      <line x1="2" y1="34" x2="62" y2="34" stroke="#AAB5BA" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none" stroke="#0C1D26"
+            stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none" stroke="#B8431A"
+            stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#a)"/>
+    </svg><b>CrestLine</b>
+  </a>
+  <a href="index.html" class="lbl" style="text-decoration:none">← Live forecast</a>
+</div></nav>
+
+<main class="wrap col">
+
+<h1>Methods and limits</h1>
+<p class="lead">CrestLine cuts three-hour forecast error at Greens Bayou by 46.9% against the standard baseline, and by 54.5% when the water is high. This page shows how that was measured, where the skill comes from, and where it runs out.</p>
+
+<h2>Why not “98% accuracy”</h2>
+<p>Bayou stage is massively autocorrelated. The level three hours from now is usually almost exactly the level right now, so a model that predicts <em>no change at all</em> scores a Nash–Sutcliffe efficiency near 0.9 and an RMSE under 0.25 ft — while containing no information whatsoever.</p>
+<p>Any flood model advertising a flat accuracy percentage is either misunderstanding this or hiding it. The honest benchmark is <strong>persistence</strong>: assume the level in three hours equals the level now. It is the standard baseline in operational hydrology, and on a river that sits still most days it is genuinely hard to beat.</p>
+<p>Every number on this site is reported against it.</p>
+
+<h2>What was measured</h2>
+<p>A chronological split: trained on 2018–2024, tested on <strong>60,556 forecasts from 21 September 2024 to 11 October 2026</strong> — two years the model never saw. No shuffling, which on a time series would let the model interpolate between adjacent 15-minute readings and produce spectacular, meaningless scores.</p>
+
+<table>
+  <tr><th>Condition</th><th>Persistence</th><th>CrestLine</th><th>Error cut</th></tr>
+  <tr><td>All conditions</td><td class="n">0.72 ft</td><td class="n">0.38 ft</td><td class="n">46.9%</td></tr>
+  <tr class="hi"><td>Highest 5% of water</td><td class="n">2.33 ft</td><td class="n">1.06 ft</td><td class="n">54.5%</td></tr>
+</table>
+
+<p>The second row matters more than the first. Flood models usually look good in aggregate because most days are dry, then fall apart when water rises. Here the gap <em>widens</em> — the model gains most exactly where the baseline fails.</p>
+
+<h2>Where the skill comes from</h2>
+<p>Not from the model being clever. From the fact that water takes time to travel.</p>
+<p>Cross-correlating each upstream gauge against Ley Road at increasing lags recovers a clear peak for each one:</p>
+
+<table>
+  <tr><th>Gauge</th><th>Peak lag</th><th>r at peak</th><th>r at zero lag</th></tr>
+  <tr><td>Greens Bayou @ US-75</td><td class="n">5.0 h</td><td class="n">0.792</td><td class="n">0.695</td></tr>
+  <tr><td>Greens Bayou nr Houston</td><td class="n">3.0 h</td><td class="n">0.873</td><td class="n">0.830</td></tr>
+  <tr><td>Halls Bayou</td><td class="n">2.5 h</td><td class="n">0.877</td><td class="n">0.855</td></tr>
+  <tr><td>Garners Bayou</td><td class="n">2.5 h</td><td class="n">0.893</td><td class="n">0.864</td></tr>
+</table>
+
+<p><strong>The lags order themselves by distance upstream</strong> — 5.0, 3.0, 2.5, 2.5 hours. Nothing in the analysis knows the geography; it recovered the river's travel time from the water alone.</p>
+<p>The lead survives differencing, which rules out shared seasonal drift inflating the correlation: on hourly <em>changes</em> rather than levels, US-75 peaks at r = 0.296 at 4.5 h against r = 0.090 at zero lag. The correlation more than triples when shifted forward.</p>
+
+<h2>Where it stops working</h2>
+<p>That same travel time sets a hard ceiling. Past roughly six hours there is no upstream water left to see, and the model has nothing persistence does not also have.</p>
+
+<div class="exhibit">
+<svg viewBox="0 0 760 290" role="img" aria-label="Forecast skill against persistence falls from 46.9% at three hours to 19.3% at eighteen hours for all conditions, and from 54.5% to 7.3% during high water.">
+  <g stroke="#E4DFD6" stroke-width="1">
+    <line x1="56" y1="240" x2="730" y2="240"/><line x1="56" y1="170" x2="730" y2="170"/>
+    <line x1="56" y1="100" x2="730" y2="100"/><line x1="56" y1="30"  x2="730" y2="30"/>
+  </g>
+  <g class="mono" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#5E6E76" text-anchor="end">
+    <text x="46" y="244">0%</text><text x="46" y="174">20%</text>
+    <text x="46" y="104">40%</text><text x="46" y="34">60%</text>
+  </g>
+  <polyline points="110,76 300,104 490,150 680,172" fill="none" stroke="#0C1D26" stroke-width="2.6" stroke-linejoin="round"/>
+  <polyline points="110,49 300,95 490,170 680,214" fill="none" stroke="#B8431A" stroke-width="2.6" stroke-linejoin="round"/>
+  <g fill="#0C1D26"><circle cx="110" cy="76" r="4"/><circle cx="300" cy="104" r="4"/><circle cx="490" cy="150" r="4"/><circle cx="680" cy="172" r="4"/></g>
+  <g fill="#B8431A"><circle cx="110" cy="49" r="4"/><circle cx="300" cy="95" r="4"/><circle cx="490" cy="170" r="4"/><circle cx="680" cy="214" r="4"/></g>
+  <g font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#B8431A" text-anchor="middle">
+    <text x="110" y="38">54.5%</text>
+  </g>
+  <g font-family="'IBM Plex Mono',monospace" font-size="11.5" fill="#B8431A" text-anchor="middle">
+    <text x="680" y="232">7.3%</text>
+  </g>
+  <g class="mono" font-family="'IBM Plex Mono',monospace" font-size="11" fill="#5E6E76" text-anchor="middle">
+    <text x="110" y="264">+3 h</text><text x="300" y="264">+6 h</text>
+    <text x="490" y="264">+12 h</text><text x="680" y="264">+18 h</text>
+  </g>
+  <g font-family="Archivo,sans-serif" font-size="12.5">
+    <rect x="300" y="276" width="16" height="3" fill="#0C1D26"/><text x="324" y="282" fill="#3D4C54">All conditions</text>
+    <rect x="440" y="276" width="16" height="3" fill="#B8431A"/><text x="464" y="282" fill="#3D4C54">High water</text>
+  </g>
+</svg>
+<p class="cap">Skill against persistence by forecast horizon. During high water it collapses from 54.5% at three hours to 7.3% at eighteen — past the time water needs to cross the watershed. This decay is why the product forecasts three hours and not more.</p>
+</div>
+
+<h2>The event that changed the design</h2>
+<p>An earlier version forecast six hours ahead and looked fine in aggregate — 38.5% high-water skill. Then we plotted the largest event in the test window, <strong>16 June 2026</strong>.</p>
+<p>Observed water climbed from 4 ft to 19 ft between 18:00 and midnight. The six-hour forecast sat flat at 2.5 ft through the entire rising limb, then jumped almost vertically to 26 ft — overshooting the actual 20.70 ft crest by <strong>5.3 ft</strong>. Six hours out, the model had no idea the surge was coming.</p>
+
+<div class="callout"><p>For a warning tool that is the failure that matters most. The entire value is warning <em>before</em> the water rises.</p></div>
+
+<p>Diagnosis showed the crest errors were bimodal rather than biased. Of the six largest events, three were near-perfect (+0.24, +0.33, +0.60 ft) and three were wild over-predictions (+5.33, +4.53, +3.81 ft). Every bad one also peaked <em>early</em> — the model was extrapolating a steep upstream rise straight through instead of damping it.</p>
+<p>Adding gridded rainfall cured the overshoot: the same event now crests at 19.8 ft against 20.70 observed, slightly under rather than five feet over. It did <strong>not</strong> cure the blind spot, and the reason is structural — the model is fed <em>observed</em> rainfall up to issue time, but the storm driving that crest largely fell during the forecast window. No feature engineering recovers information that does not exist yet.</p>
+<p>So the headline horizon moved from six hours to three, where skill peaks and the forecast sits inside the travel-time window. Closing the gap properly needs NWS quantitative precipitation forecasts as an input.</p>
+
+<h2>Data</h2>
+<table>
+  <tr><th>Source</th><th>What</th><th>Resolution</th></tr>
+  <tr><td>USGS Water Services</td><td>Stage at 5 gauges</td><td class="n">15 min, 2007–present</td></tr>
+  <tr><td>NCEP Stage IV (via IEM)</td><td>Gridded rainfall, 2 cells</td><td class="n">hourly, 70,136 h pulled</td></tr>
+</table>
+<p>Stage IV is radar-derived and bias-corrected against gauges. Gridded rainfall matters here: what drives a bayou is rain over the whole watershed, not rain at one point.</p>
+<p>The model is a gradient-boosted regressor (<code>HistGradientBoostingRegressor</code>) over <strong>63 features</strong> — upstream levels at seven lags, rates of change over 1/3/6 h, the target's own recent history, and rainfall accumulated over 1, 3, 6, 12, 24, 72 and 168 hours. The 72 h and 168 h windows stand in for soil saturation, since wet ground is what turns rain into flooding and there is no direct soil-moisture feed.</p>
+<p>Serving imports its feature builder directly from the training module, so inference cannot silently drift from training.</p>
+
+<h2>Limits</h2>
+<ol>
+  <li><strong>One gauge.</strong> Trained and validated only on Greens Bayou at Ley Road. The method should generalise to any gauge with upstream neighbours, but that is untested.</li>
+  <li><strong>No street-level inference.</strong> CrestLine predicts a gauge. Whether water reaches a given address depends on elevation, storm drains and local topography, none of which are in the model.</li>
+  <li><strong>Three hours, not more.</strong> Skill is effectively gone by eighteen hours.</li>
+  <li><strong>No forecast precipitation.</strong> Observed rainfall only — the largest remaining gap.</li>
+  <li><strong>Untested at extreme scale.</strong> The largest crest in the test window was 20.70 ft; this gauge's record is 33.61 ft. We make no claim about Harvey-scale events.</li>
+  <li><strong>“High water” is not an official flood stage.</strong> The 5.35 ft line is the 95th percentile of this gauge's own eight-year record, labelled as such throughout. Official NWS action/minor/moderate/major stages are not yet incorporated.</li>
+</ol>
+
+</main>
+
+<footer><div class="wrap col">
+  <p style="margin:0;font-size:13.5px">CrestLine · Congressional App Challenge 2026 · TX-29 ·
+  <a href="index.html">Back to the live forecast</a></p>
+</div></footer>
+
+</body>
+</html>
