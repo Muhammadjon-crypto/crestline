@@ -60,6 +60,29 @@ tr.hi td{color:var(--crest);font-weight:500}
 
 footer{background:var(--tint);border-top:1px solid var(--rule);
        margin-top:clamp(40px,6vw,72px);padding:30px 0 44px}
+
+/* ---------- architecture figure ---------- */
+.archfig{margin:34px 0 8px;padding:0}
+.archgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 22px;align-items:stretch}
+.archhead{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;font-weight:400;
+  letter-spacing:.19em;color:#5E6E76;margin:0 0 9px}
+.archhead i{font-style:normal;color:#0A6B75;margin-right:7px}
+.archbox{background:#F7F5F1;border:1px solid #DCD7CD;height:100%}
+.archrow{padding:12px 15px;border-top:1px solid #DCD7CD}
+.archrow:first-child{border-top:0}
+.archrow b{display:block;font-size:13.5px;font-weight:500;color:#0C1D26}
+.archrow em{display:block;margin-top:4px;font-style:normal;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.11em;color:#5E6E76}
+.archrow p{margin:0;font-size:13.5px;line-height:1.5;color:#3D4C54}
+.archrow p+p{margin-top:7px}
+.archup{box-shadow:inset 3px 0 0 #0A6B75}
+.archtarget{box-shadow:inset 3px 0 0 #B8431A}
+.archbig{font-size:20px;font-weight:500;letter-spacing:-.02em;color:#0C1D26}
+.archcrest{color:#B8431A;font-weight:600}
+.archnote{margin:18px 0 0;padding-top:13px;border-top:1px solid #DCD7CD;
+  font-size:12.5px;line-height:1.6;color:#3D4C54}
+@media (max-width:560px){.archgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -169,6 +192,78 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
 <p>The model is a gradient-boosted regressor (<code>HistGradientBoostingRegressor</code>) over <strong>63 features</strong>: upstream levels at seven lags, rates of change over 1/3/6 h, the target's own recent history, and rainfall accumulated over 1, 3, 6, 12, 24, 72 and 168 hours. The 72 h and 168 h windows stand in for soil saturation, since wet ground is what turns rain into flooding and there is no direct soil-moisture feed.</p>
 <p>Serving imports its feature builder directly from the training module, so inference cannot silently drift from training.</p>
 
+      <p>Built in Python 3.13. The model is trained and served with scikit-learn
+      1.7.2 and joblib 1.5.2; data handling uses pandas 2.3.3 and NumPy 2.3.5.
+      The live service runs on FastAPI 0.143.0 and Uvicorn 0.54.0, with
+      APScheduler 3.11.3 driving the 15-minute refresh and Requests 2.32.5
+      fetching from USGS and IEM. The interface, including every chart, is
+      hand-written HTML, CSS and JavaScript with no front-end framework and no
+      charting library.</p>
+
+      <figure class="archfig">
+        <div class="archgrid">
+
+          <section>
+            <p class="archhead"><i>01</i>INPUTS</p>
+            <div class="archbox">
+              <div class="archrow archup"><b>Greens Bayou @ US-75</b><em>LEADS BY 5.0 H</em></div>
+              <div class="archrow archup"><b>Greens Bayou nr Houston</b><em>LEADS BY 3.0 H</em></div>
+              <div class="archrow archup"><b>Halls Bayou</b><em>LEADS BY 2.5 H</em></div>
+              <div class="archrow archup"><b>Garners Bayou</b><em>LEADS BY 2.5 H</em></div>
+              <div class="archrow archtarget"><b>Greens Bayou at Ley Rd</b><em>THE GAUGE BEING FORECAST</em></div>
+              <div class="archrow"><b>NCEP Stage IV rainfall</b><em>2 GRID CELLS &middot; HOURLY &middot; RADAR, BIAS-CORRECTED</em></div>
+            </div>
+          </section>
+
+          <section>
+            <p class="archhead"><i>02</i>FEATURES</p>
+            <div class="archbox">
+              <div class="archrow"><span class="archbig">63 features</span></div>
+              <div class="archrow">
+                <p>Upstream stage at seven lags</p>
+                <p>Rate of change over 1, 3 and 6 h</p>
+                <p>The target&rsquo;s own recent history</p>
+                <p>Rain totals from 1 h to 168 h</p>
+              </div>
+              <div class="archrow"><em>THE 72 H AND 168 H WINDOWS STAND IN FOR SOIL SATURATION</em></div>
+            </div>
+          </section>
+
+          <section>
+            <p class="archhead"><i>03</i>MODEL</p>
+            <div class="archbox">
+              <div class="archrow"><b>Gradient boosting</b><em>HistGradientBoostingRegressor</em></div>
+              <div class="archrow">
+                <p>Trained 2018&ndash;2024</p>
+                <p>Tested on 60,556 forecasts it never saw</p>
+              </div>
+              <div class="archrow"><p>+3 h horizon, &plusmn;0.38 ft typical error</p></div>
+              <div class="archrow">
+                <p><b>46.9% error cut</b></p>
+                <p class="archcrest">54.5% when the water is high</p>
+                <em>AGAINST PERSISTENCE</em>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <p class="archhead"><i>04</i>SERVING</p>
+            <div class="archbox">
+              <div class="archrow"><b>FastAPI service</b><em>UVICORN ON A SINGLE INSTANCE</em></div>
+              <div class="archrow"><b>APScheduler refresh</b><em>EVERY 15 MINUTES</em></div>
+              <div class="archrow"><p>In-memory cache, with forecast.json read back on restart</p></div>
+              <div class="archrow"><em>/API/FORECAST &middot; /API/METRICS &middot; /API/REPLAY</em></div>
+              <div class="archrow"><b>Dashboard in the browser</b><em>HAND-WRITTEN SVG CHARTS</em></div>
+            </div>
+          </section>
+
+        </div>
+        <p class="archnote">The same <code>build_features()</code> runs in training and in
+        serving, so the features the model was scored on are the features it is fed live.
+        Lead times come from the cross-correlation analysis above; the model is never fed
+        rainfall that falls after issue time.</p>
+      </figure>
+
 <h2>Limits</h2>
 <ol>
   <li><strong>One gauge.</strong> Trained and validated only on Greens Bayou at Ley Road. The method should generalize to any gauge with upstream neighbours, but that is untested.</li>
@@ -183,7 +278,7 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
 
 <footer><div class="wrap col">
   <p style="margin:0;font-size:13.5px">CrestLine · Congressional App Challenge 2026 · TX-29 ·
-  <a href="index.html">Back to the live forecast</a></p>
+  <a href="index.html">Back to the live forecast</a> &middot; <a href="story.html">Why we built this</a></p>
 </div></footer>
 
 </body>

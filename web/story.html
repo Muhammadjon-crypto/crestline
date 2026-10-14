@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrestLine — Why we built this</title>
+<meta name="description" content="Abuja, Lagos and Houston: why a three-hour flood forecast is the part that was missing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M6 52 C20 52 22 14 32 14 C42 14 44 52 58 52' fill='none' stroke='%230C1D26' stroke-width='9' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{--deepwater:#0C1D26;--bone:#F2EFE9;--signal:#0A6B75;--crest:#B8431A;
+      --silt:#5E6E76;--rule:#DCD7CD;--tint:#EAE5DC;--panel:#F7F5F1}
+*{box-sizing:border-box} html,body{margin:0}
+body{background:var(--bone);color:var(--deepwater);font-family:Archivo,system-ui,sans-serif;
+     font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.lbl{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10.5px;
+     letter-spacing:.17em;text-transform:uppercase;color:var(--silt)}
+.wrap{max-width:1440px;margin:0 auto;padding:0 clamp(16px,4vw,44px)}
+.col{max-width:760px}
+a{color:var(--signal)}
+
+nav{border-bottom:1px solid var(--rule)}
+.navrow{display:flex;align-items:center;justify-content:space-between;height:66px;gap:16px}
+.brand{display:flex;align-items:center;gap:13px;text-decoration:none;color:inherit}
+.brand svg{width:31px;height:31px}
+.brand b{font-size:21px;font-weight:600;letter-spacing:-.035em}
+
+h1{font-size:clamp(28px,4vw,42px);font-weight:600;letter-spacing:-.03em;
+   line-height:1.1;margin:clamp(32px,5vw,56px) 0 14px}
+.lead{font-size:clamp(16px,1.9vw,19px);line-height:1.55;color:#3D4C54;margin:0 0 8px}
+h2{font-size:clamp(19px,2.3vw,23px);font-weight:600;letter-spacing:-.02em;
+   margin:clamp(34px,4.5vw,52px) 0 14px;padding-top:clamp(26px,3vw,34px);
+   border-top:1px solid var(--rule)}
+h3{font-size:16px;font-weight:600;margin:26px 0 8px}
+p{margin:0 0 15px;line-height:1.62;color:#3D4C54}
+p strong,li strong{color:var(--deepwater)}
+li{margin-bottom:8px;line-height:1.6;color:#3D4C54}
+em{color:var(--deepwater)}
+code{font-family:'IBM Plex Mono',monospace;font-size:.88em;background:var(--tint);
+     padding:1px 5px;border-radius:3px}
+
+table{border-collapse:collapse;width:100%;max-width:760px;margin:20px 0 24px;font-size:14.5px}
+th{text-align:left;font-family:'IBM Plex Mono',monospace;font-size:10.5px;
+   letter-spacing:.14em;text-transform:uppercase;color:var(--silt);
+   font-weight:400;padding:0 14px 9px 0;border-bottom:1px solid var(--rule)}
+td{padding:10px 14px 10px 0;border-bottom:1px solid var(--rule)}
+td.n{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums}
+tr.hi td{color:var(--crest);font-weight:500}
+
+.exhibit{background:var(--panel);border:1px solid var(--rule);padding:clamp(18px,3vw,28px);
+         margin:24px 0 28px;max-width:860px}
+.exhibit svg{width:100%;height:auto;display:block}
+.cap{font-size:13px;color:#3D4C54;margin-top:14px;line-height:1.55}
+
+.callout{border-left:3px solid var(--crest);padding:4px 0 4px 18px;margin:22px 0}
+.callout p{margin:0;color:var(--deepwater)}
+
+footer{background:var(--tint);border-top:1px solid var(--rule);
+       margin-top:clamp(40px,6vw,72px);padding:30px 0 44px}
+
+/* ---------- architecture figure ---------- */
+.archfig{margin:34px 0 8px;padding:0}
+.archgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px 22px;align-items:stretch}
+.archhead{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;font-weight:400;
+  letter-spacing:.19em;color:#5E6E76;margin:0 0 9px}
+.archhead i{font-style:normal;color:#0A6B75;margin-right:7px}
+.archbox{background:#F7F5F1;border:1px solid #DCD7CD;height:100%}
+.archrow{padding:12px 15px;border-top:1px solid #DCD7CD}
+.archrow:first-child{border-top:0}
+.archrow b{display:block;font-size:13.5px;font-weight:500;color:#0C1D26}
+.archrow em{display:block;margin-top:4px;font-style:normal;
+  font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;
+  letter-spacing:.11em;color:#5E6E76}
+.archrow p{margin:0;font-size:13.5px;line-height:1.5;color:#3D4C54}
+.archrow p+p{margin-top:7px}
+.archup{box-shadow:inset 3px 0 0 #0A6B75}
+.archtarget{box-shadow:inset 3px 0 0 #B8431A}
+.archbig{font-size:20px;font-weight:500;letter-spacing:-.02em;color:#0C1D26}
+.archcrest{color:#B8431A;font-weight:600}
+.archnote{margin:18px 0 0;padding-top:13px;border-top:1px solid #DCD7CD;
+  font-size:12.5px;line-height:1.6;color:#3D4C54}
+@media (max-width:560px){.archgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap navrow">
+  <a class="brand" href="index.html">
+    <svg viewBox="0 0 64 64" role="img" aria-label="CrestLine">
+      <clipPath id="a"><rect x="0" y="0" width="64" height="34"/></clipPath>
+      <line x1="2" y1="34" x2="62" y2="34" stroke="#AAB5BA" stroke-width="2.5" stroke-linecap="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none" stroke="#0C1D26"
+            stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M3 55 L14 54 C23 53 25 11 35 11 C45 11 46 42 61 51" fill="none" stroke="#B8431A"
+            stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" clip-path="url(#a)"/>
+    </svg><b>CrestLine</b>
+  </a>
+  <a href="index.html" class="lbl" style="text-decoration:none">← Live forecast</a>
+</div></nav>
+
+<main class="wrap col">
+
+<h1>Why we built this</h1>
+<p class="lbl" style="margin:-4px 0 30px">MUHAMMADJON TURSUNBADALOV</p>
+
+<p>I grew up in Abuja, and my twin brother Mustafojon and I were there for twelve
+years. The rainy season runs about half the year and the roads had no drainage, so when it
+rained hard the water just stayed where it fell. The rain itself was never steady. Most of the
+time the water stayed at a level people were used to, and then some days there was far too much
+of it.</p>
+
+<p>The one time I went to Lagos, the first thing I saw was our van sitting deep in water in the
+middle of the road with traffic stopped all around it, and what I remember most is that nobody
+was surprised by any of it. People were walking through the water with their pants rolled up and
+their things balanced on their heads, and the keke napeps, which are the three-wheeled vehicles
+everyone uses there for public transport, were packed to capacity, and when one got stuck a few
+people would get out and push it through for the driver. Nobody was panicking, because they had
+accepted it a long time ago. There was never going to be anything that warned them in advance,
+so they just lived with it.</p>
+
+<p>In Abuja we lived with it the same way. We would look outside, and if the water was already
+up, that decided the day, because cars got stuck in it most of the time and then you were sitting
+there for hours waiting on a tow with water all around you and no way to leave. The days that
+caught people out were the ones where the water came up after they had already gone.</p>
+
+<p>We moved to Houston in 2023, and the first time I saw a bayou come up here people didn't seem
+to know how to act, and it caused a lot of confusion. That surprised me, because Houston has
+gauges every few miles along Greens Bayou that report every fifteen minutes, which is far more
+than Abuja ever had. But those gauges still only tell you the water is rising after it has
+already started.</p>
+
+<p>So neither place had the part I actually wanted, which is some amount of time before it
+happens. Three hours isn't much warning, but it's enough to move a car off the street or take a
+different way home.</p>
+
+<p class="lbl" style="margin-top:38px;padding-top:18px;border-top:1px solid var(--rule)">
+BUILT BY MUHAMMADJON TURSUNBADALOV, MUSTAFOJON TURSUNBADALOV,<br>
+YUNUS KILINC AND ALEXANDER NGUYEN &middot; CONGRESSIONAL APP CHALLENGE 2026</p>
+
+</main>
+
+<footer><div class="wrap col">
+  <p style="margin:0;font-size:13.5px">CrestLine · Congressional App Challenge 2026 · TX-29 ·
+  <a href="index.html">Back to the live forecast</a></p>
+</div></footer>
+
+</body>
+</html>
