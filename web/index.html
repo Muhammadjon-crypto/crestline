@@ -248,6 +248,7 @@ body.replay #scrub{display:block}
     </div>
     <svg id="chart" viewBox="0 0 1352 336" role="img" aria-label="Rainfall and water level over the past 24 hours with a three-hour forecast"></svg>
     <div class="xaxis" id="xaxis"></div>
+      <div class="lbl" id="scorecard" style="margin-top:11px;padding-top:11px;border-top:1px solid var(--rule);margin-bottom:24px;line-height:1.7"></div>
   </section>
 
   <section class="wrap upsec">
@@ -255,6 +256,7 @@ body.replay #scrub{display:block}
       <h2>Upstream inputs</h2>
       <span class="lbl">Lead time measured from 8 years of paired records · each gauge on its own datum</span>
     </div>
+    <div id="chain" style="margin:4px 0 22px"></div>
     <div class="upgrid" id="upstream"></div>
   </section>
 
@@ -310,6 +312,46 @@ const clock = iso => new Date(iso).toLocaleTimeString([], {hour:'2-digit', minut
 /* ---------- chart geometry ---------- */
 const W = 1280, RAIN_H = 64, TOP = 90, BOT = 310;
 
+function buildChain(d){
+  const ups = (d.upstream || []).slice().sort((a,b) => b.lead_hours - a.lead_hours);
+  if (!ups.length) return '';
+  const yMid = 70, xL = 74, xR = 900;
+  const maxLead = Math.max(...ups.map(u => u.lead_hours));
+  const xf = h => xR - (h / maxLead) * (xR - xL);
+  const short = n => n.replace('Greens Bayou @ ', '').replace('Greens Bayou ', '').replace(' Bayou', '');
+
+  const groups = {};
+  ups.forEach(u => { (groups[u.lead_hours] = groups[u.lead_hours] || []).push(u); });
+
+  let s = `<svg viewBox="0 0 1000 142" width="100%" style="display:block;height:auto">`;
+  s += `<line x1="${xL-18}" y1="${yMid}" x2="${xR+30}" y2="${yMid}" stroke="#C9D1D4" stroke-width="2"/>`;
+  s += `<path d="M${xR+30} ${yMid} l-10 -5.5 v11 z" fill="#C9D1D4"/>`;
+
+  Object.keys(groups).forEach(k => {
+    const g = groups[k], x = xf(parseFloat(k));
+    g.forEach((u, i) => {
+      const y = g.length === 1 ? yMid : (i === 0 ? yMid - 32 : yMid + 32);
+      if (y !== yMid)
+        s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${yMid}" stroke="#C9D1D4" stroke-width="2"/>`;
+      s += `<circle cx="${x}" cy="${y}" r="6" fill="#F2EFE9" stroke="#0A6B75" stroke-width="2.4"/>`;
+      const up = y <= yMid;
+      const n1 = up ? y - 16 : y + 24, n2 = up ? y - 31 : y + 39;
+      s += `<text x="${x}" y="${n1}" text-anchor="middle" font-family="Archivo,system-ui,sans-serif"
+              font-size="13.5" font-weight="500" fill="#0C1D26">${short(u.name)}</text>`;
+      s += `<text x="${x}" y="${n2}" text-anchor="middle" font-family="'IBM Plex Mono',ui-monospace,monospace"
+              font-size="10" letter-spacing="1.1" fill="#5E6E76">${u.lead_hours} H AHEAD</text>`;
+    });
+  });
+
+  s += `<circle cx="${xR}" cy="${yMid}" r="8.5" fill="#B8431A"/>`;
+  s += `<text x="${xR}" y="${yMid-18}" text-anchor="middle" font-family="Archivo,system-ui,sans-serif"
+          font-size="14" font-weight="600" fill="#0C1D26">Ley Rd</text>`;
+  s += `<text x="${xR}" y="${yMid+26}" text-anchor="middle" font-family="'IBM Plex Mono',ui-monospace,monospace"
+          font-size="10" letter-spacing="1.1" fill="#B8431A">FORECAST HERE</text>`;
+  s += `</svg>`;
+  return s;
+}
+
 function buildChart(d){
   const obs = d.recent_stage.map(p => ({t:new Date(p.t).getTime(), v:p.ft}));
   if (!obs.length) return '';
@@ -361,6 +403,19 @@ function buildChart(d){
   const pts = obs.map(o => `${x(o.t).toFixed(1)} ${y(o.v).toFixed(1)}`);
   s += `<path d="M${pts.join(' L')} L${x(tNow).toFixed(1)} ${BOT} L0 ${BOT} Z"
           fill="#0C1D26" opacity=".055"/>`;
+
+  // every forecast made in the last 24 h, plotted at the time it was FOR,
+  // so it lies directly under the observed line it was trying to predict
+  const hind = (d.hindcast || [])
+    .filter(h => h.obs_ft !== null)
+    .map(h => ({t: new Date(h.valid).getTime(), v: h.pred_ft}))
+    .filter(h => h.t >= t0);
+  if (hind.length > 1){
+    const hp = hind.map(h => `${x(h.t).toFixed(1)} ${y(h.v).toFixed(1)}`);
+    s += `<path d="M${hp.join(' L')}" fill="none" stroke="#0A6B75"
+            stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"
+            opacity=".75" stroke-dasharray="1 3.5"/>`;
+  }
 
   // forecast cone — band grows linearly to the measured RMSE
   const xN = x(tNow), yN = y(obs[obs.length-1].v);
@@ -419,6 +474,13 @@ function render(d){
     : rising     ? `${(-above).toFixed(1)} ft below high water, and moving.`
     :              `Well below high water. Record at this gauge is ${d.record_ft} ft.`;
 
+  const hcR = d.hindcast_rmse_ft, hcP = d.hindcast_persistence_rmse_ft;
+  const sc = $('scorecard');
+  if (sc) sc.textContent = (hcR != null && hcP != null)
+    ? `LAST 24 H · CRESTLINE ${hcR} FT · PERSISTENCE ${hcP} FT · `
+      + `${d.hindcast_scored} FORECASTS SCORED · DOTTED LINE SHOWS EACH ONE`
+    : '';
+
   // fourth cell: confidence when calm, rate of rise when not
   if (high){
     $('fourthLbl').textContent  = 'Rate of rise';
@@ -449,6 +511,7 @@ function render(d){
   $('keyFcst').style.background = rising ? 'var(--crest)' : 'var(--signal)';
   $('keyBand').style.background = rising ? 'rgba(184,67,26,.20)' : 'rgba(10,107,117,.18)';
 
+  { const c = $('chain'); if (c) c.innerHTML = buildChain(d); }
   $('upstream').innerHTML = d.upstream.map(u => `
     <div class="upcard">
       <div class="upname">${u.name}</div>

@@ -183,6 +183,32 @@ def forecast():
     roc_1h = roc_per_hour(t)
     state, label = condition(now_ft, pred, roc_1h, hist["high_water_ft"])
 
+    # --- rolling hindcast -------------------------------------------------
+    # Every complete feature row in the last 24 h, scored against what the
+    # water actually did three hours after each one was issued. This is the
+    # model's public track record, recomputed on every refresh.
+    window = valid.iloc[-97:]
+    preds  = model.predict(window)
+    last_obs = t.index[-1]
+    hind, err_model, err_pers = [], [], []
+    for (ix, _), p in zip(window.iterrows(), preds):
+        vt = ix + pd.Timedelta(hours=HORIZON_H)
+        o = float(t.asof(vt)) if vt <= last_obs else None
+        at_issue = t.asof(ix)
+        hind.append({
+            "issued": ix.isoformat(),
+            "valid": vt.isoformat(),
+            "pred_ft": round(float(p), 2),
+            "obs_ft": round(o, 2) if o is not None and pd.notna(o) else None,
+        })
+        if o is not None and pd.notna(o):
+            err_model.append((float(p) - o) ** 2)
+            if pd.notna(at_issue):
+                err_pers.append((float(at_issue) - o) ** 2)
+
+    rmse24 = round((sum(err_model) / len(err_model)) ** 0.5, 2) if err_model else None
+    pers24 = round((sum(err_pers) / len(err_pers)) ** 0.5, 2) if err_pers else None
+
     # upstream panel
     upstream = []
     for sid, (name, lead_h, r) in LEAD.items():
@@ -228,6 +254,11 @@ def forecast():
         "recent_rain": [{"t": ix.isoformat(), "in": round(float(v), 3)}
                         for ix, v in rain_24.items() if pd.notna(v)],
         "rain_24h_total": round(float(rain_24.sum()), 2) if len(rain_24) else 0.0,
+
+        "hindcast": hind,
+        "hindcast_scored": len(err_model),
+        "hindcast_rmse_ft": rmse24,
+        "hindcast_persistence_rmse_ft": pers24,
 
         "upstream": upstream,
         "metrics": {
