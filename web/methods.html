@@ -114,6 +114,16 @@ footer{background:var(--tint);border-top:1px solid var(--rule);
 <h2>What was measured</h2>
 <p>A chronological split: trained on 2018–2024, tested on <strong>60,556 forecasts from 21 September 2024 to 11 October 2026</strong>. Those are two years the model never saw. No shuffling, which on a time series would let the model interpolate between adjacent 15-minute readings and produce scores that look spectacular and mean nothing.</p>
 
+      <p>Those 60,556 forecasts are not independent of one another. Readings
+      fifteen minutes apart describe the same river in the same state, so the
+      number that actually constrains a claim about flood performance is how
+      many separate events the window contains. It contains <strong>38
+      independent high-water episodes</strong>, counting every run above 5.35 ft
+      and merging runs less than 24 hours apart so one storm is not counted
+      twice. Sixteen peaked above 10 ft, five above 15 ft, and the largest was
+      the 20.70 ft crest of 16 June 2026. The high-water figures on this page
+      are measured across all 38.</p>
+
 <table>
   <tr><th>Condition</th><th>Persistence</th><th>CrestLine</th><th>Error cut</th></tr>
   <tr><td>All conditions</td><td class="n">0.72 ft</td><td class="n">0.38 ft</td><td class="n">46.9%</td></tr>

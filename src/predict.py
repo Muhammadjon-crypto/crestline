@@ -71,6 +71,8 @@ def fetch_rain_live(days=LOOKBACK_DAYS):
         if chunks:
             s = pd.concat(chunks).sort_index()
             series[name] = s[~s.index.duplicated()].rename(name)
+    if not series:
+        return pd.DataFrame()          # every rainfall request failed
     return pd.concat(series.values(), axis=1)
 
 
@@ -137,6 +139,24 @@ def context_line(state, fcst_ft, hist):
 
 
 # ------------------------------------------------------------------- main
+def roc_per_hour(s):
+    """Change per hour over the last hour, measured by timestamp.
+
+    Indexing back a fixed number of rows assumes no gaps; on a dropna'd
+    series a five-row step can span hours, which would publish a wrong
+    rate exactly when telemetry is patchy."""
+    if len(s) < 2:
+        return 0.0
+    now_t = s.index[-1]
+    past = s[s.index <= now_t - pd.Timedelta(hours=1)]
+    if past.empty:
+        return 0.0
+    gap_h = (now_t - past.index[-1]).total_seconds() / 3600
+    if gap_h > 3:                      # nothing recent enough to call it a rate
+        return 0.0
+    return float((s.iloc[-1] - past.iloc[-1]) / gap_h)
+
+
 def forecast():
     model = joblib.load("data/crestline_model_3h.joblib")
     meta  = json.load(open("data/model_metrics.json"))
@@ -148,7 +168,11 @@ def forecast():
     X = build_features(stage, rain).reindex(columns=meta["feature_names"])
     valid = X.dropna()
     if valid.empty:
-        raise RuntimeError("No complete feature row \u2014 a gauge may be offline")
+        raise RuntimeError(
+            "No complete feature row: "
+            f"{stage.shape[1]} stage columns, "
+            f"{0 if rain.empty else rain.shape[1]} rain columns. "
+            "A gauge or the rainfall feed is probably down.")
 
     row    = valid.iloc[[-1]]
     issued = row.index[-1]
@@ -156,7 +180,7 @@ def forecast():
 
     t = stage[TARGET].dropna()
     now_ft = float(t.iloc[-1])
-    roc_1h = float(t.iloc[-1] - t.iloc[-5]) if len(t) > 5 else 0.0
+    roc_1h = roc_per_hour(t)
     state, label = condition(now_ft, pred, roc_1h, hist["high_water_ft"])
 
     # upstream panel
@@ -170,7 +194,7 @@ def forecast():
         upstream.append({
             "id": sid, "name": name,
             "level_ft": round(float(s.iloc[-1]), 2),
-            "roc_ft_per_h": round(float(s.iloc[-1] - s.iloc[-5]), 2) if len(s) > 5 else 0.0,
+            "roc_ft_per_h": round(roc_per_hour(s), 2),
             "lead_hours": lead_h, "r": r,
         })
 
