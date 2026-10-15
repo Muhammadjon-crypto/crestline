@@ -56,7 +56,8 @@ for ts, pred in zip(rows.index, preds):
         "roc_ft_per_h": round(r, 2),
         "state": state, "state_label": label,
         "context": context_line(state, float(pred), hist),
-        "band_ft": round(meta["rmse_high_ft" if state == "high" else "rmse_ft"], 2),
+        "band_ft": round(meta["rmse_high_ft" if state in ("high", "elevated") else "rmse_ft"], 2),
+        "band_basis": "high" if state in ("high", "elevated") else "normal",
         "upstream": [
             {"id": sid, "name": nm, "lead_hours": lh, "r": rr,
              "level_ft": round(float(stage[sid].loc[ts]), 2),

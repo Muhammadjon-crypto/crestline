@@ -289,7 +289,7 @@ body.replay #scrub{display:block}
           <span class="mono pct" style="color:var(--crest)" id="b2pct"></span>
         </div>
       </div>
-      <div class="mfoot">The model pulls ahead on rising water, which is where persistence falls apart. <a href="methods.html">Full validation, lead times and limits →</a> &middot; <a href="story.html">Why we built this &rarr;</a></div>
+      <div class="mfoot">The model pulls ahead on rising water, which is where persistence falls apart. <a href="methods.html">Full validation, lead times and limits →</a></div>
     </div>
   </div></section>
 
@@ -432,7 +432,9 @@ function render(d){
     $('fourthVal').style.color  = '';
     $('fourthUnit').textContent = 'ft';
     $('fourthNote').textContent =
-      `Typical error at this lead time, measured on ${d.metrics.n_test.toLocaleString()} held-out forecasts.`;
+      d.band_basis === 'high'
+      ? `Typical error once water is rising, measured on the highest 5% of ${d.metrics.n_test.toLocaleString()} held-out forecasts.`
+      : `Typical error on an ordinary day, across ${d.metrics.n_test.toLocaleString()} held-out forecasts. It widens as water rises.`;
   }
 
   $('alert').classList.toggle('on', high);
@@ -515,6 +517,7 @@ function frameToPayload(i){
     change_ft: f.change_ft, roc_ft_per_h: f.roc_ft_per_h,
     state: f.state, state_label: f.state_label, context: f.context,
     high_water_ft: R.high_water_ft, record_ft: R.record_ft, band_ft: f.band_ft,
+    band_basis: f.band_basis,
     recent_stage: R.stage.filter(within), recent_rain: rain,
     rain_24h_total: +rain.reduce((a,p) => a + p.in, 0).toFixed(2),
     upstream: f.upstream || [], metrics: R.metrics,

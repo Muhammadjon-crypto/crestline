@@ -195,8 +195,9 @@ def forecast():
         "high_water_ft": hist["high_water_ft"],
         "record_ft": hist["record_ft"],
 
-        "band_ft": round(meta["rmse_high_ft" if state == "high"
+        "band_ft": round(meta["rmse_high_ft" if state in ("high", "elevated")
                               else "rmse_ft"], 2),
+        "band_basis": "high" if state in ("high", "elevated") else "normal",
 
         "recent_stage": [{"t": ix.isoformat(), "ft": round(float(v), 2)}
                          for ix, v in recent.items() if pd.notna(v)],
